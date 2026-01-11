@@ -43,7 +43,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ artifact }) => {
     return () => {
         logger.logPageDwell(ModeType.CROWD_CHAT, artifact.id);
     };
-  }, [artifact.id, activeReplyItem]); 
+  }, [artifact.id]); // 移除 activeReplyItem 依赖，避免打开/关闭输入框时重复计时
 
   // Toast Timer Logic
   useEffect(() => {

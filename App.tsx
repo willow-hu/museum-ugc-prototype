@@ -83,7 +83,14 @@ function App() {
     e.preventDefault();
     if (participantIdInput.trim()) {
       const pId = `P${participantIdInput.trim()}`;
+      
+      // 保存到 sessionStorage（用于后端数据上报）
+      sessionStorage.setItem('participantId', pId);
+      console.log('[App] Participant ID saved:', pId);
+      
+      // 设置 logger 的 userId
       logger.setUserId(pId);
+      
       setView('HOME');
     }
   };

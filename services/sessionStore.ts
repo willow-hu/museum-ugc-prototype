@@ -46,29 +46,20 @@ class SessionStore {
     
     // 发送到后端
     const participantId = this.getParticipantId();
+    console.log('[SessionStore] addComment - participantId:', participantId);
     if (participantId) {
       apiClient.sendUGC({
         participantId,
         content: item.content,
         artifactId,
         mode: item.mode,
-        timestamp: item.timestamp ? new Date(item.timestamp).getTime() : Date.now()
+        timestamp: Date.now() // 使用当前时间戳，不转换item.timestamp（可能是字符串）
       });
+    } else {
+      console.warn('[SessionStore] ⚠️ No participantId found, cannot send UGC');
     }
   }
 
-    
-    // 发送到后端
-    const participantId = this.getParticipantId();
-    if (participantId) {
-      apiClient.sendUGC({
-        participantId,
-        content: item.content,
-        artifactId,
-        mode: item.mode,
-        timestamp: item.timestamp ? new Date(item.timestamp).getTime() : Date.now()
-      });
-    }
   getComments(artifactId: string): ContentItem[] {
     return this.commentBoardData.get(artifactId) || [];
   }
@@ -81,6 +72,18 @@ class SessionStore {
     }
     const current = this.crowdChatData.get(artifactId) || [];
     this.crowdChatData.set(artifactId, [...current, item]);
+    
+    // 发送到后端
+    const participantId = this.getParticipantId();
+    if (participantId) {
+      apiClient.sendUGC({
+        participantId,
+        content: item.content,
+        artifactId,
+        mode: item.mode,
+        timestamp: Date.now() // 使用当前时间戳
+      });
+    }
   }
 
   getChatMessages(artifactId: string): ContentItem[] {

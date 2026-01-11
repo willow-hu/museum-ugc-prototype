@@ -26,6 +26,9 @@ class ApiClient {
    * 发送UGC内容到后端
    */
   async sendUGC(payload: UGCPayload): Promise<void> {
+    console.log('[API] Attempting to send UGC:', payload);
+    console.log('[API] API URL:', `${API_BASE_URL}/data/ugc`);
+    
     try {
       const response = await fetch(`${API_BASE_URL}/data/ugc`, {
         method: 'POST',
@@ -35,13 +38,19 @@ class ApiClient {
         body: JSON.stringify(payload),
       });
 
+      console.log('[API] Response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('[API] Error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
       }
 
-      console.log('[API] UGC sent successfully:', payload);
+      const result = await response.json();
+      console.log('[API] ✅ UGC sent successfully:', result);
     } catch (error) {
-      console.error('[API] Failed to send UGC:', error);
+      console.error('[API] ❌ Failed to send UGC:', error);
+      console.error('[API] Error details:', error instanceof Error ? error.message : error);
       // 不抛出错误，避免影响用户体验
     }
   }
@@ -50,6 +59,9 @@ class ApiClient {
    * 发送时间记录到后端
    */
   async sendTimeRecord(payload: TimeRecordPayload): Promise<void> {
+    console.log('[API] Attempting to send time record:', payload);
+    console.log('[API] API URL:', `${API_BASE_URL}/data/time`);
+    
     try {
       const response = await fetch(`${API_BASE_URL}/data/time`, {
         method: 'POST',
@@ -59,13 +71,19 @@ class ApiClient {
         body: JSON.stringify(payload),
       });
 
+      console.log('[API] Response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('[API] Error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
       }
 
-      console.log('[API] Time record sent successfully:', payload);
+      const result = await response.json();
+      console.log('[API] ✅ Time record sent successfully:', result);
     } catch (error) {
-      console.error('[API] Failed to send time record:', error);
+      console.error('[API] ❌ Failed to send time record:', error);
+      console.error('[API] Error details:', error instanceof Error ? error.message : error);
       // 不抛出错误，避免影响用户体验
     }
   }

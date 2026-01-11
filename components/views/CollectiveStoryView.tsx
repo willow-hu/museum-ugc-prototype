@@ -3,6 +3,7 @@ import { ContentItem, ModeType, Artifact, ChatMessage } from '../../types';
 import { getCollectiveStoryScript, getUserAvatar } from '../../data';
 import { sessionStore } from '../../services/sessionStore';
 import { logger } from '../../services/logger';
+import { apiClient } from '../../services/apiClient';
 import { Send, CheckCircle2, Play, MapPin } from 'lucide-react';
 
 interface CollectiveStoryViewProps {
@@ -163,6 +164,19 @@ const CollectiveStoryView: React.FC<CollectiveStoryViewProps> = ({ onTaskStart }
     };
     
     logger.logSubmission(ModeType.COLLECTIVE_STORY, 'text', userInput);
+
+    // 发送UGC到后端
+    const participantId = sessionStore.getParticipantId();
+    const currentArtifact = script[currentStage]?.artifact;
+    if (participantId && currentArtifact) {
+      apiClient.sendUGC({
+        participantId,
+        content: userInput,
+        artifactId: currentArtifact.id,
+        mode: ModeType.COLLECTIVE_STORY,
+        timestamp: Date.now()
+      });
+    }
 
     setChatHistory(prev => [...prev, userMsg]);
     setUserInput('');

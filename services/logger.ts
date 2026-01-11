@@ -38,6 +38,13 @@ class LoggerService {
     const exitTime = Date.now();
     const duration = exitTime - this.pageEnterTime;
     
+    // 忽略太短的时长（可能是页面加载/组件重渲染导致的抖动）
+    const MIN_DURATION_MS = 100; // 最小100ms
+    if (duration < MIN_DURATION_MS) {
+      console.log(`[Logger] Ignoring short duration: ${duration}ms (< ${MIN_DURATION_MS}ms threshold)`);
+      return;
+    }
+    
     // 使用传入的参数或存储的值
     const finalMode = mode || this.currentMode;
     const finalArtifactId = artifactId || this.currentArtifactId;
@@ -56,6 +63,7 @@ class LoggerService {
     
     // 发送到后端
     const participantId = sessionStorage.getItem('participantId');
+    console.log('[Logger] logPageDwell - participantId:', participantId);
     if (participantId) {
       apiClient.sendTimeRecord({
         participantId,
@@ -64,6 +72,8 @@ class LoggerService {
         exitTime,
         durationMs: duration
       });
+    } else {
+      console.warn('[Logger] ⚠️ No participantId found, cannot send time record');
     }
     
     this.pageEnterTime = 0;

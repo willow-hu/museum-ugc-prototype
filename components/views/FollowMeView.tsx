@@ -3,6 +3,7 @@ import { ContentItem, ModeType, Artifact, ChatMessage } from '../../types';
 import { getFollowMeScript, getFollowMeGuideProfile } from '../../data';
 import { sessionStore } from '../../services/sessionStore';
 import { logger } from '../../services/logger';
+import { apiClient } from '../../services/apiClient';
 import { Send, User as UserIcon, CheckCircle2, Play, MapPin } from 'lucide-react';
 import NarratorProfile from '../modules/NarratorProfile';
 
@@ -190,6 +191,19 @@ const FollowMeView: React.FC<FollowMeViewProps> = ({ onTaskStart }) => {
     };
     
     logger.logSubmission(ModeType.FOLLOW_ME, 'text', userInput);
+
+    // 发送UGC到后端
+    const participantId = sessionStore.getParticipantId();
+    const currentArtifact = script[currentStage]?.artifact;
+    if (participantId && currentArtifact) {
+      apiClient.sendUGC({
+        participantId,
+        content: userInput,
+        artifactId: currentArtifact.id,
+        mode: ModeType.FOLLOW_ME,
+        timestamp: Date.now()
+      });
+    }
 
     setChatHistory(prev => [...prev, userMsg]);
     setUserInput('');
