@@ -1,0 +1,7 @@
+{
+  "name": "Museum Experience Prototype",
+  "description": "A mobile prototype for testing 4 different UGC presentation strategies in a museum context.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
