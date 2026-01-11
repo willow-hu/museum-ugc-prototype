@@ -7,6 +7,9 @@ let ARTIFACT_DATA: {
   tour_route: Array<{id: string, transition_text?: { follow_me?: string, collective_story?: string }}> 
 } = { metadata: {}, ugc_content: {}, tour_route: [] };
 
+// User Avatar Database from CSV
+let USER_AVATAR_DB: Record<string, string> = {};
+
 // --- MOCK USER DATABASE (Avatar Mapping) ---
 // In a real app, this would come from a backend user service.
 // We map special system users to fixed avatars.
@@ -21,6 +24,11 @@ const USER_AVATAR_MAP: Record<string, string> = {
  * If not, generate a stable one based on the name.
  */
 export const getUserAvatar = (name: string): string => {
+  // 1. Check CSV loaded database
+  if (USER_AVATAR_DB[name]) {
+    return USER_AVATAR_DB[name];
+  }
+  // 2. Check static map
   if (USER_AVATAR_MAP[name]) {
     return USER_AVATAR_MAP[name];
   }
@@ -28,6 +36,8 @@ export const getUserAvatar = (name: string): string => {
   // Using 'adventurer' style for general users
   return `https://api.dicebear.com/7.x/thumbs/svg?seed=${encodeURIComponent(name)}`;
 };
+
+
 
 /**
  * Initializes the data by fetching the JSON file.
@@ -39,7 +49,22 @@ export const initData = async (): Promise<void> => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     ARTIFACT_DATA = await response.json();
-    console.log('[Data] Loaded successfully');
+    console.log('[Data] UGC Data Loaded successfully');
+
+    // Load User Avatar JSON
+    try {
+      const userResponse = await fetch('public/data/users_data.json');
+      if (userResponse.ok) {
+        USER_AVATAR_DB = await userResponse.json();
+        console.log(`[Data] User avatars loaded: ${Object.keys(USER_AVATAR_DB).length} entries`);
+      } else {
+        console.warn('[Data] users_data.json not found or failed to load');
+      }
+    } catch (userError) {
+      console.warn('[Data] Error loading users_data.json:', userError);
+      USER_AVATAR_DB = {};
+    }
+
   } catch (error) {
     console.error('[Data] Failed to load artifact data:', error);
     ARTIFACT_DATA = { metadata: {}, ugc_content: {}, tour_route: [] };
