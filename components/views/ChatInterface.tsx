@@ -22,7 +22,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ artifact }) => {
 
   // Load and Group Data
   useEffect(() => {
-    logger.startPageTimer();
+    logger.startPageTimer(ModeType.CROWD_CHAT, artifact.id);
     const staticData = getArtifactContent(artifact.id, ModeType.CROWD_CHAT);
     const userData = sessionStore.getChatMessages(artifact.id);
     const rawData = [...staticData, ...userData];
@@ -41,7 +41,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ artifact }) => {
     setGroupedData(groups);
 
     return () => {
-        logger.logPageDwell(ModeType.CROWD_CHAT);
+        logger.logPageDwell(ModeType.CROWD_CHAT, artifact.id);
     };
   }, [artifact.id, activeReplyItem]); 
 

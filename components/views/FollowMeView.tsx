@@ -54,10 +54,7 @@ const FollowMeView: React.FC<FollowMeViewProps> = ({ onTaskStart }) => {
       setIsProfileOpen(true);
     }
 
-    logger.startPageTimer();
-    return () => {
-        logger.logPageDwell(ModeType.FOLLOW_ME);
-    };
+    // 不在这里计时，每个文物单独计时
   }, []);
 
   // 2. Resume or Start
@@ -230,6 +227,10 @@ const FollowMeView: React.FC<FollowMeViewProps> = ({ onTaskStart }) => {
         
         if (onTaskStart) onTaskStart();
 
+        // 开始计时：用户点击"找到了"，开始浏览该文物
+        const currentArtifact = script[currentStage]?.artifact;
+        logger.startPageTimer(ModeType.FOLLOW_ME, currentArtifact?.id || null);
+
         setChatHistory(prev => [...prev, {
             id: `user-found-${Date.now()}`,
             type: 'user_text',
@@ -252,6 +253,10 @@ const FollowMeView: React.FC<FollowMeViewProps> = ({ onTaskStart }) => {
         
         setIsWaitingForUser(false);
         setShowToast(false);
+
+        // 结束计时：用户点击"看完了"，结束当前文物浏览
+        const currentArtifact = script[currentStage]?.artifact;
+        logger.logPageDwell(ModeType.FOLLOW_ME, currentArtifact?.id || null);
 
         const nextStage = currentStage + 1;
         if (nextStage < script.length) {

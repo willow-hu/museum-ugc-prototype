@@ -1,5 +1,6 @@
 import { ContentItem, ModeType, ChatMessage, NarrativeState } from '../types';
 import { getUserAvatar } from '../data';
+import { apiClient } from './apiClient';
 
 /**
  * SessionStore
@@ -24,6 +25,11 @@ class SessionStore {
   // 4. Collective Story Storage (Key: 'global' - single instance)
   private collectiveStoryState: NarrativeState | null = null;
 
+  // --- Participant ID Methods ---
+  getParticipantId(): string | null {
+    return sessionStorage.getItem('participantId');
+  }
+
   // --- User Methods ---
   getCurrentUser() {
     return this.currentUser;
@@ -37,8 +43,32 @@ class SessionStore {
     }
     const current = this.commentBoardData.get(artifactId) || [];
     this.commentBoardData.set(artifactId, [item, ...current]); 
+    
+    // 发送到后端
+    const participantId = this.getParticipantId();
+    if (participantId) {
+      apiClient.sendUGC({
+        participantId,
+        content: item.content,
+        artifactId,
+        mode: item.mode,
+        timestamp: item.timestamp ? new Date(item.timestamp).getTime() : Date.now()
+      });
+    }
   }
 
+    
+    // 发送到后端
+    const participantId = this.getParticipantId();
+    if (participantId) {
+      apiClient.sendUGC({
+        participantId,
+        content: item.content,
+        artifactId,
+        mode: item.mode,
+        timestamp: item.timestamp ? new Date(item.timestamp).getTime() : Date.now()
+      });
+    }
   getComments(artifactId: string): ContentItem[] {
     return this.commentBoardData.get(artifactId) || [];
   }

@@ -21,13 +21,13 @@ const CommentBoard: React.FC<CommentBoardProps> = ({ artifact }) => {
 
   // Load Data
   useEffect(() => {
-    logger.startPageTimer();
+    logger.startPageTimer(ModeType.COMMENT_BOARD, artifact.id);
     const staticData = getArtifactContent(artifact.id, ModeType.COMMENT_BOARD);
     const userData = sessionStore.getComments(artifact.id);
     setData([...userData, ...staticData]);
     
     return () => {
-        logger.logPageDwell(ModeType.COMMENT_BOARD);
+        logger.logPageDwell(ModeType.COMMENT_BOARD, artifact.id);
     };
   }, [artifact.id]);
 
