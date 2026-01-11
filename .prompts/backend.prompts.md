@@ -28,87 +28,85 @@
 
 ---
 
-## 📦 **数据模型设计**
+## 📦 **数据模型设计（精简版）**
 
-### **1. 用户会话表（Sessions）**
+### **数据结构（按参与者编号组织）**
 ```typescript
 {
-  sessionId: string,           // 唯一会话ID
-  userId?: string,             // 可选真实用户ID
-  startTime: timestamp,
-  endTime: timestamp,
-  device: {                    // 设备信息
-    userAgent: string,
-    screenSize: string,
-    platform: string
-  }
+  participantId: string,       // 参与者编号（最外层）
+  ugcContents: UGCContent[],   // UGC内容列表
+  timeRecords: TimeRecord[]    // 时间记录列表
 }
 ```
 
-### **2. UGC内容表（UserContents）**
+### **1. UGC内容**
 ```typescript
-{
-  id: string,
-  sessionId: string,
-  artifactId: string,
-  mode: ModeType,
-  inputType: 'text' | 'audio',
-  content: string,             // 文本内容
-  audioUrl?: string,           // 语音文件URL
-  contentLength: number,
-  timestamp: timestamp,
-  context: {                   // 上下文
-    replyToTopic?: string,     // 回复的话题（Chat模式）
-    viewDuration: number       // 提交前的浏览时长
-  }
+interface UGCContent {
+  content: string,             // 内容（文本或"[语音]"标记）
+  artifactId: string,          // 对应文物ID
+  mode: ModeType,              // 对应模式
+  timestamp: number            // 提交时间戳
 }
 ```
 
-### **3. 行为事件表（BehaviorEvents）**
+### **2. 时间记录**
 ```typescript
-{
-  id: string,
-  sessionId: string,
-  eventType: 'mode_select' | 'page_view' | 'artifact_select' | 
-             'back_button' | 'input_open' | 'input_cancel' | 
-             'tour_start' | 'tour_complete' | 'lock_trigger',
-  timestamp: timestamp,
-  details: {
-    mode?: ModeType,
-    artifactId?: string,
-    fromView?: string,
-    toView?: string,
-    durationMs?: number,
-    wasLocked?: boolean        // 是否因锁定功能被阻止
-  }
+interface TimeRecord {
+  mode: ModeType | null,       // 对应模式（null表示主页）
+  artifactId: string | null,   // 对应文物ID（null表示列表页/Tour模式）
+  exitTime: number,            // 退出时间戳
+  durationMs: number           // 停留时长（毫秒）
+  // 进入时间 = exitTime - durationMs
 }
 ```
 
-### **4. 页面停留表（PageDwells）**
+---
+
+## 🔄 **现有数据映射关系**
+
+### **sessionStore.ts → ugcContents**
 ```typescript
-{
-  id: string,
-  sessionId: string,
-  view: 'HOME' | 'ARTIFACT_LIST' | 'CONTENT_VIEW',
-  mode?: ModeType,
-  artifactId?: string,
-  enterTime: timestamp,
-  exitTime: timestamp,
-  durationMs: number,
-  scrollDepth?: number,        // 滚动深度百分比
-  interactionCount: number     // 交互次数
-}
+// Comment Board 的 ContentItem
+sessionStore.getComments(artifactId) 
+→ { content: item.content, artifactId, mode: 'comment_board', timestamp }
+
+// Crowd Chat 的 ContentItem
+sessionStore.getChatMessages(artifactId)
+→ { content: item.content, artifactId, mode: 'crowd_chat', timestamp }
+
+// Follow Me / Collective Story 的用户回复
+NarrativeState.history 中 type='user_text' 的消息
+→ { content: msg.content, artifactId: msg.artifact.id, mode, timestamp }
 ```
+
+### **logger.ts → timeRecords**
+```typescript
+// 已经在记录，只需要调整
+logPageDwell(mode, artifactId?) 
+→ { mode, artifactId, exitTime: Date.now(), durationMs }
+```
+
+### **需要调整的地方**
+1. ✅ **UGC数据**：sessionStore已完整，直接用
+2. ✅ **时间记录**：logger.ts已经在记录时长，只需要：
+   - 添加 artifactId 参数（现在只有mode）
+   - 记录退出时刻（exitTime = Date.now()）
+   - 删除不需要的 mode_select 和 submission 事件
+3. ⚠️ **数据发送**：退出页面时发送到后端
 
 ---
 
 ## 🔌 **API端点设计**
 
 ```
-POST   /api/session/start          # 创建会话
-POST   /api/session/end            # 结束会话
-POST   /api/events                 # 批量上报行为事件
-POST   /api/ugc                    # 提交UGC内容
-POST   /api/ugc/audio              # 上传语音文件
-GET    /api/data/export/:sessionId # 导出单个会话数据（科研用）
+POST   /api/data/ugc          # 提交UGC内容
+       Body: { participantId, content, artifactId, mode, timestamp }
+
+POST   /api/data/time         # 提交时间记录
+       Body: { participantId, action, mode, artifactId, timestamp }
+
+GET    /api/data/:participantId    # 获取参与者所有数据
+       Response: { participantId, ugcContents[], timeRecords[] }
+
+GET    /api/data/export/all        # 导出所有数据（CSV/JSON）
 ```
