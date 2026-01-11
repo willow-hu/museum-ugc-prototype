@@ -11,7 +11,7 @@ import { logger } from './services/logger';
 import { ChevronLeft, Loader2 } from 'lucide-react';
 
 // View states for the application flow
-type ViewState = 'HOME' | 'ARTIFACT_LIST' | 'CONTENT_VIEW';
+type ViewState = 'ID_INPUT' | 'HOME' | 'ARTIFACT_LIST' | 'CONTENT_VIEW';
 
 // Helper to determine if a mode is a linear tour (Follow Me or Collective Story)
 const isTourMode = (mode: ModeType | null) => 
@@ -22,7 +22,8 @@ const TEST_DURATION_MS = 0.1 * 60 * 1000;
 
 function App() {
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<ViewState>('HOME');
+  const [view, setView] = useState<ViewState>('ID_INPUT');
+  const [participantIdInput, setParticipantIdInput] = useState('');
   const [currentMode, setCurrentMode] = useState<ModeType | null>(null);
   const [selectedArtifact, setSelectedArtifact] = useState<Artifact | null>(null);
 
@@ -74,6 +75,16 @@ function App() {
     if (taskStartTime === null) {
       console.log('Task/Lock Timer Started');
       setTaskStartTime(Date.now());
+    }
+  };
+
+  // Experiment Setup: Submit Participant ID
+  const handleIdSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (participantIdInput.trim()) {
+      const pId = `P${participantIdInput.trim()}`;
+      logger.setUserId(pId);
+      setView('HOME');
     }
   };
 
@@ -161,6 +172,38 @@ function App() {
       <div className="flex flex-col items-center justify-center h-screen bg-[#f5f5f0] text-stone-500 gap-4">
         <Loader2 size={32} className="animate-spin text-[#b45309]" />
         <span className="font-serif-sc text-sm tracking-widest">正在载入文物数据...</span>
+      </div>
+    );
+  }
+
+  // View: Experiment ID Input
+  if (view === 'ID_INPUT') {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-[#f5f5f0] text-stone-800 gap-6 p-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-serif-sc font-bold mb-2 text-[#b45309]">参与者编号</h1>
+          <p className="text-stone-500 text-sm">请输入实验分配给您的编号</p>
+        </div>
+        <form onSubmit={handleIdSubmit} className="flex flex-col gap-4 w-full max-w-xs">
+          <div className="flex items-center gap-2 bg-white p-3 rounded-lg border border-stone-300 shadow-sm focus-within:ring-2 focus-within:ring-[#b45309]">
+            <span className="text-stone-400 font-bold">P</span>
+            <input 
+              type="number" 
+              value={participantIdInput}
+              onChange={(e) => setParticipantIdInput(e.target.value)}
+              placeholder="请输入数字"
+              className="flex-1 bg-transparent border-none outline-none text-lg font-mono placeholder:font-sans"
+              autoFocus
+            />
+          </div>
+          <button 
+            type="submit" 
+            disabled={!participantIdInput}
+            className="bg-[#1c1917] text-[#e7e5e4] py-3 rounded-lg font-serif-sc font-bold tracking-wider hover:bg-[#b45309] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            开始体验
+          </button>
+        </form>
       </div>
     );
   }

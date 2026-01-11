@@ -45,6 +45,7 @@ export interface NarrativeState {
 
 export interface LogEntry {
   timestamp: number;
+  userId?: string;
   eventType: 'mode_select' | 'page_view' | 'submission';
   details: {
     mode?: ModeType;

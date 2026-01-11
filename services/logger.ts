@@ -3,11 +3,17 @@ import { LogEntry, ModeType } from '../types';
 class LoggerService {
   private logs: LogEntry[] = [];
   private pageEnterTime: number = 0;
+  private userId: string = 'unknown';
+
+  setUserId(id: string) {
+    this.userId = id;
+  }
 
   // Log mode selection
   logModeSelect(mode: ModeType) {
     const entry: LogEntry = {
       timestamp: Date.now(),
+      userId: this.userId,
       eventType: 'mode_select',
       details: { mode }
     };
@@ -27,6 +33,7 @@ class LoggerService {
     const duration = Date.now() - this.pageEnterTime;
     const entry: LogEntry = {
       timestamp: Date.now(),
+      userId: this.userId,
       eventType: 'page_view',
       details: { 
         mode,
@@ -42,6 +49,7 @@ class LoggerService {
   logSubmission(mode: ModeType, inputType: 'text' | 'audio', content: string | Blob, blobUrl?: string) {
     const entry: LogEntry = {
       timestamp: Date.now(),
+      userId: this.userId,
       eventType: 'submission',
       details: {
         mode,

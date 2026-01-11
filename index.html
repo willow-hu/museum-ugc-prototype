@@ -28,6 +28,15 @@
       .font-serif-sc {
         font-family: 'Noto Serif SC', serif;
       }
+      /* Hide arrows/spinners for number inputs */
+      input[type=number]::-webkit-inner-spin-button, 
+      input[type=number]::-webkit-outer-spin-button { 
+        -webkit-appearance: none; 
+        margin: 0; 
+      }
+      input[type=number] {
+        -moz-appearance: textfield;
+      }
     </style>
   <script type="importmap">
 {
