@@ -20,6 +20,14 @@ const isTourMode = (mode: ModeType | null) =>
 // EXPERIMENT CONSTANT: 3 Minutes in milliseconds (Set to 6s for testing)
 const TEST_DURATION_MS = 0.1 * 60 * 1000; 
 
+// Mode sequence for Main Mode assignment (1-based index from ID)
+const MODE_SEQUENCE = [
+  ModeType.COMMENT_BOARD,   // 1
+  ModeType.FOLLOW_ME,       // 2
+  ModeType.CROWD_CHAT,      // 3
+  ModeType.COLLECTIVE_STORY // 0
+];
+
 function App() {
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<ViewState>('ID_INPUT');
@@ -28,8 +36,18 @@ function App() {
   const [selectedArtifact, setSelectedArtifact] = useState<Artifact | null>(null);
 
   // --- Experiment State ---
+  // Assigned Main Mode (calculated from Participant ID)
+  const [assignedMainMode, setAssignedMainMode] = useState<ModeType | null>(null);
+  
+  // Track completed artifacts to prevent re-locking
+  // Stores artifactId valid for the current assigned Main Mode
+  const [completedArtifacts, setCompletedArtifacts] = useState<Set<string>>(new Set());
+
   // Renamed to taskStartTime to reflect it starts when the specific task/interaction begins
   const [taskStartTime, setTaskStartTime] = useState<number | null>(null);
+  // Current active locking Artifact ID
+  const [lockingArtifactId, setLockingArtifactId] = useState<string | null>(null);
+  
   const [isLocked, setIsLocked] = useState(false); // State to trigger re-renders
   const [showTimeToast, setShowTimeToast] = useState(false);
 
@@ -54,26 +72,54 @@ function App() {
 
     // If time has already passed
     if (remaining <= 0) {
-      setIsLocked(false);
+      if (isLocked) {
+        setIsLocked(false);
+        // Mark current artifact as completed
+        if (lockingArtifactId) {
+          setCompletedArtifacts(prev => new Set(prev).add(lockingArtifactId));
+          console.log(`[App] Artifact ${lockingArtifactId} marked as completed.`);
+        }
+      }
       return;
     }
 
     // Lock and schedule unlock
-    setIsLocked(true);
+    if (!isLocked) setIsLocked(true);
     console.log(`[App] Locked for ${remaining}ms`);
 
     const timerId = setTimeout(() => {
       console.log('[App] Timer expired, unlocking UI');
       setIsLocked(false); // This triggers the re-render!
+      // Mark as completed
+      if (lockingArtifactId) {
+        setCompletedArtifacts(prev => new Set(prev).add(lockingArtifactId));
+        console.log(`[App] Artifact ${lockingArtifactId} marked as completed.`);
+      }
     }, remaining);
 
     return () => clearTimeout(timerId);
-  }, [taskStartTime]);
+  }, [taskStartTime, lockingArtifactId]);
 
   // Callback to start the timer (passed to child components)
-  const handleTaskStart = () => {
+  const handleTaskStart = (artifactId?: string) => {
+    // 1. Determine target artifact ID
+    const targetId = artifactId || selectedArtifact?.id;
+    
+    // 2. Main Mode Check
+    if (currentMode !== assignedMainMode) {
+      console.log(`[App] Not in Main Mode (${assignedMainMode}), skipping lock.`);
+      return;
+    }
+
+    // 3. Completed Check
+    if (targetId && completedArtifacts.has(targetId)) {
+      console.log(`[App] Artifact ${targetId} already completed, skipping lock.`);
+      return;
+    }
+
     if (taskStartTime === null) {
-      console.log('Task/Lock Timer Started');
+      console.log(`[App] Starting Lock Timer for Artifact: ${targetId}`);
+      if (targetId) setLockingArtifactId(targetId);
       setTaskStartTime(Date.now());
     }
   };
@@ -84,6 +130,15 @@ function App() {
     if (participantIdInput.trim()) {
       const pId = `P${participantIdInput.trim()}`;
       
+      // Calculate Main Mode
+      const idNum = parseInt(participantIdInput.trim(), 10);
+      if (!isNaN(idNum) && idNum > 0) {
+        const modeIndex = (idNum - 1) % 4;
+        const mainMode = MODE_SEQUENCE[modeIndex];
+        setAssignedMainMode(mainMode);
+        console.log(`[App] Assigned Main Mode for ${pId}: ${mainMode}`);
+      }
+
       // 保存到 sessionStorage（用于后端数据上报）
       sessionStorage.setItem('participantId', pId);
       console.log('[App] Participant ID saved:', pId);
@@ -102,6 +157,7 @@ function App() {
     
     // Reset timer when entering a new mode sequence
     setTaskStartTime(null);
+    setLockingArtifactId(null);
 
     // SPECIAL CASE: Tour modes (Follow Me / Collective Story) skip the artifact list 
     // and go to a guided tour of all artifacts
@@ -120,7 +176,8 @@ function App() {
     setView('CONTENT_VIEW');
     
     // For non-tour modes (Comment/Chat), we start the timer when they enter the content view
-    handleTaskStart();
+    // Pass the artifact ID explicitly
+    handleTaskStart(artifact.id);
   };
 
   // Back button logic
@@ -140,9 +197,11 @@ function App() {
         setCurrentMode(null);
         setView('HOME');
         setTaskStartTime(null); // Reset
+        setLockingArtifactId(null);
       } else {
         setView('ARTIFACT_LIST');
         setTaskStartTime(null); // Reset when leaving content
+        setLockingArtifactId(null);
       }
     } else if (view === 'ARTIFACT_LIST') {
       setCurrentMode(null);
@@ -217,7 +276,7 @@ function App() {
 
   // View: Mode Selection (Home)
   if (view === 'HOME') {
-    return <ModeSelector onSelect={handleModeSelect} />;
+    return <ModeSelector onSelect={handleModeSelect} assignedMainMode={assignedMainMode} />;
   }
 
   return (

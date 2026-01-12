@@ -4,9 +4,10 @@ import { MessageSquare, User, LayoutList, BookOpen } from 'lucide-react';
 
 interface ModeSelectorProps {
   onSelect: (mode: ModeType) => void;
+  assignedMainMode?: ModeType | null;
 }
 
-const ModeSelector: React.FC<ModeSelectorProps> = ({ onSelect }) => {
+const ModeSelector: React.FC<ModeSelectorProps> = ({ onSelect, assignedMainMode }) => {
   const modes = [
     {
       id: ModeType.COMMENT_BOARD,
@@ -47,7 +48,13 @@ const ModeSelector: React.FC<ModeSelectorProps> = ({ onSelect }) => {
       <div className="mb-10 text-center">
         <h1 className="text-3xl font-serif-sc font-bold text-[#292524] mb-3 tracking-wide">观展模式</h1>
         <div className="h-1 w-16 bg-[#b45309] mx-auto rounded-full mb-3"></div>
-        <p className="text-stone-500 font-serif-sc text-sm">选择一种视角，开启文物探索之旅</p>
+        {assignedMainMode ? (
+          <p className="text-[#b45309] font-serif-sc font-bold text-base bg-amber-50 px-4 py-1 rounded-full inline-block border border-amber-200">
+            您的主要模式是：{modes.find(m => m.id === assignedMainMode)?.title}
+          </p>
+        ) : (
+          <p className="text-stone-500 font-serif-sc text-sm">选择一种视角，开启文物探索之旅</p>
+        )}
       </div>
       
       <div className="grid grid-cols-2 gap-5 w-full max-w-md">

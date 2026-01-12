@@ -8,7 +8,7 @@ import { Send, User as UserIcon, CheckCircle2, Play, MapPin } from 'lucide-react
 import NarratorProfile from '../modules/NarratorProfile';
 
 interface FollowMeViewProps {
-  onTaskStart?: () => void;
+  onTaskStart?: (artifactId?: string) => void;
 }
 
 type TourPhase = 'locating' | 'exploring';
@@ -239,10 +239,12 @@ const FollowMeView: React.FC<FollowMeViewProps> = ({ onTaskStart }) => {
         setIsFinding(false);
         setTourPhase('exploring'); // Switch to Exploring phase
         
-        if (onTaskStart) onTaskStart();
+        const currentArtifact = script[currentStage]?.artifact;
+
+        // Trigger task start (Locking Logic if Main Mode)
+        if (onTaskStart) onTaskStart(currentArtifact?.id);
 
         // 开始计时：用户点击"找到了"，开始浏览该文物
-        const currentArtifact = script[currentStage]?.artifact;
         logger.startPageTimer(ModeType.FOLLOW_ME, currentArtifact?.id || null);
 
         setChatHistory(prev => [...prev, {

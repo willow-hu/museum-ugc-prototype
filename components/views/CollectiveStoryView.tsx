@@ -7,7 +7,7 @@ import { apiClient } from '../../services/apiClient';
 import { Send, CheckCircle2, Play, MapPin } from 'lucide-react';
 
 interface CollectiveStoryViewProps {
-  onTaskStart?: () => void;
+  onTaskStart?: (artifactId?: string) => void;
 }
 
 type TourPhase = 'locating' | 'exploring';
@@ -211,10 +211,12 @@ const CollectiveStoryView: React.FC<CollectiveStoryViewProps> = ({ onTaskStart }
         setIsFinding(false);
         setTourPhase('exploring');
         
-        if (onTaskStart) onTaskStart();
+        const currentArtifact = script[currentStage]?.artifact;
+
+        // Trigger task start (Locking logic)
+        if (onTaskStart) onTaskStart(currentArtifact?.id);
 
         // 开始计时：用户点击"找到了"，开始浏览该文物
-        const currentArtifact = script[currentStage]?.artifact;
         logger.startPageTimer(ModeType.COLLECTIVE_STORY, currentArtifact?.id || null);
 
         setChatHistory(prev => [...prev, {
