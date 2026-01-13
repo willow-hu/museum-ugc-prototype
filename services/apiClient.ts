@@ -3,7 +3,10 @@
  * 调用后端API发送数据
  */
 
-const API_BASE_URL = 'http://localhost:3001/api';
+// 开发环境：指向本机后端；生产环境：使用当前站点域名下的 /api
+const API_BASE_URL = import.meta.env.PROD
+  ? '/api'
+  : 'http://localhost:3001/api';
 
 interface UGCPayload {
   participantId: string;
