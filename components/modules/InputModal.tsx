@@ -24,7 +24,8 @@ const InputModal: React.FC<InputModalProps> = ({
   // Clear text when opening
   useEffect(() => {
     if (isOpen) {
-      setText('');
+      // Don't clear text to preserve draft
+      // setText('');
       setIsRecording(false);
       setRecordingTime(0);
     }
