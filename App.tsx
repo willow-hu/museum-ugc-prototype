@@ -18,7 +18,7 @@ const isTourMode = (mode: ModeType | null) =>
   mode === ModeType.FOLLOW_ME || mode === ModeType.COLLECTIVE_STORY;
 
 // EXPERIMENT CONSTANT: 3 Minutes in milliseconds (Set to 6s for testing)
-const TEST_DURATION_MS = 0.1 * 60 * 1000; 
+const TEST_DURATION_MS = 3 * 60 * 1000; 
 
 // Mode sequence for Main Mode assignment (1-based index from ID)
 const MODE_SEQUENCE = [
